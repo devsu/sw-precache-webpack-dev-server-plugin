@@ -23,19 +23,12 @@ function absolutePath(relativePath) {
 function filterGlobs(context, globs) {
 	const assetGlobs = [];
 	let cachedFiles = [];
-
+	
 	globs.forEach(pattern => {
 		const file = isPathInside(absolutePath(pattern), context);
 
 		if (file) {
-			const files = glob.sync(pattern.replace(path.sep, '/'));
-
-			if (files.length > 0) {
-				cachedFiles = cachedFiles.concat(files);
-			} else {
-				// add pattern anyway if files doesn't exist
-				assetGlobs.push(pattern);
-			}
+			cachedFiles = cachedFiles.concat(glob.sync(pattern.replace(path.sep, '/')));
 		} else {
 			assetGlobs.push(pattern);
 		}
@@ -53,14 +46,7 @@ function precache(assets, opts) {
 	opts.staticFileGlobs = [];
 
 	return swPrecache.generate(opts).then(sw => {
-		let cached = globs.cachedFiles;
-
-		if (globs.assetGlobs.length > 0) {
-			cached = cached.concat(Object.keys(assets).filter(a => {
-				return multimatch(assets[a].existsAt, globs.assetGlobs).length > 0;
-			}));
-		}
-
+		let cached = globs.cachedFiles.concat(Object.keys(assets));
 		cached = cached.map(a => `['${a.startsWith('/') ? '' : '/'}${a}', '${hash(a)}']`);
 
 		const timestamp = `// Manipulated by SWPrecacheWebpackDevPlugin ${new Date()}\n`;
